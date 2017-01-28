@@ -3,7 +3,7 @@
 This is a program that uses a genetic evolutionary algorithm to recreate an image using only circles of different sizes, colors, positions and alphas. As an example, this are some samples produced with the algorithm:
 
 <p align="center">
-  <img src="https://github.com/bryan138/genetic-images/edit/master/demo.jpg" />
+  <img src="https://raw.githubusercontent.com/bryan138/genetic-images/master/demo.jpg" />
 </p>
 
 
