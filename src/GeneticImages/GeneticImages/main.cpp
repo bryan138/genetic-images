@@ -16,10 +16,9 @@
 #include <ctime>
 #include <direct.h>
 #include <fstream>
-
 #include <opencv2/opencv.hpp>
-using namespace cv;
 
+using namespace cv;
 using namespace std;
 
 
@@ -30,7 +29,12 @@ using namespace std;
 #define POPULATION 10
 #define CIRCLES_PER_GEN 1
 
+#define IMAGE_FOLDER "../../../img/"
+#define TEST_FOLDER "../../../test/"
 #define FILENAME "monalisa"
+
+
+Mat reference, copyImage;
 
 
 class Circle {
@@ -46,7 +50,40 @@ public:
 	}
 
 	int calculateFitness() {
-		return 0;
+		Mat black = createImage();
+		int fitness = 0;
+
+		// Add delta for each pixel, on all three RGB chanels
+		for (int i = 0; i < 256; i ++) {
+			for (int j = 0; j < 256; j ++) {
+				for (int k = 0; k < 3; k ++) {
+					fitness += abs(reference.at<Vec3b>(i, j)[k] - black.at<Vec3b>(i, j)[k]);
+				}
+			}
+		}
+
+		return fitness;
+	}
+
+	Mat createImage() {
+		Mat img = copyImage.clone();
+
+		for (int i = 0; i < dna.length();) {
+			int x = (unsigned char)dna[i ++];
+			int y = (unsigned char)dna[i ++];
+			int radius = (unsigned char)dna[i ++];
+			double alpha = (unsigned char)dna[i ++] / 255.0;
+			int r = (unsigned char)dna[i ++];
+			int g = (unsigned char)dna[i ++];
+			int b = (unsigned char)dna[i ++];
+
+			// Add circle to current image
+			Mat blank = img.clone();
+			circle(blank, Point(x, y), radius, Scalar(b, g, r), -1);
+			addWeighted(blank, alpha, img, 1.0 - alpha, 0, img);
+		}
+		
+		return img;
 	}
 };
 
@@ -55,10 +92,9 @@ void select(vector<Circle *> &samples) {
 	vector<Circle *> newSamples(n);
 
 	for (int i = 0; i < n; i ++) {
+		// Select the fittest
 		int a = rand() % n;
 		int b = rand() % n;
-
-		// Select the fittest
 		newSamples[i] = ((*samples[a]).fitness < (*samples[b]).fitness) ? samples[a] : samples[b];
 	}
 
@@ -69,12 +105,13 @@ void mate(vector<Circle *> &samples) {
 	int n = samples.size();
 	vector<Circle *> newSamples(n);
 
-	for (int i = 0; i < n / 2; i ++) {
+	for (int i = 0; i < n; i += 2) {
 		Circle * dadA = samples[rand() % n];
 		Circle * dadB = samples[rand() % n];
 
-		float prob = rand() / RAND_MAX;
+		float prob = (double)rand() / RAND_MAX;
 		if (prob < MATE_RATE) {
+			// Mate dads, merging from a random cross point
 			int l = (*dadA).dna.length();
 			int crossPoint = rand() % l;
 			string sonA = (*dadA).dna.substr(0, crossPoint) + (*dadB).dna.substr(crossPoint, l);
@@ -84,6 +121,7 @@ void mate(vector<Circle *> &samples) {
 			newSamples[i + 1] = new Circle(sonB);
 
 		} else {
+			// No mutation is necessary, pass both dads unchanged
 			newSamples[i] = dadA;
 			newSamples[i + 1] = dadB;
 		}
@@ -133,38 +171,47 @@ vector<Circle *> createPopulation(Circle *&elite) {
 	for (int i = 0; i < samples.size(); i ++) {
 		// Create random dna
 		string dna = "";
-		for (int j = 0; j < CIRCLES_PER_GEN; j ++) {
-			dna += (char)(rand() % 256);
+		for (int j = 0; j < 7 * CIRCLES_PER_GEN; j ++) {
+			dna += (unsigned char)(rand() % 256);
 		}
 
-		// Save elite
+		// Keep track of elite sample
 		Circle *circle = new Circle(dna);
 		if (elite == nullptr || (*circle).fitness < (*elite).fitness) {
 			elite = circle;
 		}
+
+		samples[i] = circle;
 	}
 
 	return samples;
 }
 
 int main() {
+	// Give new seed to random generator
+	srand(time(NULL));
+
 	// Load reference image
-	Mat reference;// = imread(FILENAME, CV_LOAD_IMAGE_COLOR);
+	reference = imread(IMAGE_FOLDER FILENAME ".jpg", CV_LOAD_IMAGE_COLOR);
+	copyImage = Mat(256, 256, CV_8UC3, Scalar(0, 0, 0));
 
 	// Create folder structure with current date
 	char buffer[50];
 	time_t rawtime = time(NULL);
 	strftime(buffer, 50, "%H.%M.%S", localtime(&rawtime));
 	string date(buffer);
-	string folder = FILENAME + (string)"\\" + date + "\\";
+	string folder = TEST_FOLDER FILENAME "/" + date + "/";
+	_mkdir(TEST_FOLDER);
+	_mkdir(TEST_FOLDER FILENAME);
 	_mkdir(folder.c_str());
 
-	// Copy reference image
-	ifstream src(FILENAME + (string)".jpg", ios::binary);
-	ofstream dest(folder + FILENAME + (string)".jpg", ios::binary);
+	// Copy reference image file
+	imwrite(folder + FILENAME + (string)".jpg", reference);
 
+	// Create population
 	Circle *elite = nullptr;
 	vector<Circle *> population = createPopulation(elite);
+	copyImage = (*elite).createImage();
 
 	int gen = 0;
 	while (true) {
@@ -188,11 +235,13 @@ int main() {
 		} else {
 			// Keep track of new alpha elite
 			elite = pseudoElite;
+			copyImage = (*elite).createImage();
 		}
 
 		if (gen % 10 == 0) {
 			// Save new snapshot
 			float percentage = 100.0 - ((*elite).fitness * 100.0 / (float)(256 * 256 * 3 * 255));
+			imwrite(folder + to_string(gen) + " (" + to_string((*elite).fitness) + " - " + to_string(percentage) + ").jpg", copyImage);
 		}
 
 		gen ++;
