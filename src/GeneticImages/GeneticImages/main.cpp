@@ -28,6 +28,7 @@ using namespace std;
 
 #define POPULATION 10
 #define CIRCLES_PER_GEN 1
+#define REP_TOLERANCE 5
 
 #define IMAGE_FOLDER "../../../img/"
 #define TEST_FOLDER "../../../test/"
@@ -211,8 +212,9 @@ int main() {
 	// Create population
 	Circle *elite = nullptr;
 	vector<Circle *> population = createPopulation(elite);
-	copyImage = (*elite).createImage();
 
+	int currentEliteFitness = (*elite).fitness;
+	int repetitions = 0;
 	int gen = 0;
 	while (true) {
 		select(population);
@@ -235,13 +237,27 @@ int main() {
 		} else {
 			// Keep track of new alpha elite
 			elite = pseudoElite;
-			copyImage = (*elite).createImage();
 		}
 
 		if (gen % 10 == 0) {
 			// Save new snapshot
 			float percentage = 100.0 - ((*elite).fitness * 100.0 / (float)(256 * 256 * 3 * 255));
 			imwrite(folder + to_string(gen) + " (" + to_string((*elite).fitness) + " - " + to_string(percentage) + ").jpg", copyImage);
+
+			// Save elite image and recreate population whenever the
+			// current elite fitness repeats for a fixed amount of generations
+			if (currentEliteFitness == (*elite).fitness) {
+				repetitions ++;
+				if (repetitions >= REP_TOLERANCE) {
+					copyImage = (*elite).createImage();
+					elite = nullptr;
+					population = createPopulation(elite);
+				}
+
+			} else {
+				currentEliteFitness = (*elite).fitness;
+				repetitions = 1;
+			}
 		}
 
 		gen ++;
