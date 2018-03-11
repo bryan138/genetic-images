@@ -32,7 +32,8 @@ using namespace std;
 
 #define IMAGE_FOLDER "../../../img/"
 #define TEST_FOLDER "../../../test/"
-#define FILENAME "monalisa"
+
+#define FILENAME "quiroz"
 
 
 Mat reference, copyImage;
@@ -209,6 +210,11 @@ int main() {
 	// Copy reference image file
 	imwrite(folder + FILENAME + (string)".jpg", reference);
 
+	// Create DNA file
+	ofstream file;
+	file.open(TEST_FOLDER "dna.txt");
+	file.close();
+
 	// Create population
 	Circle *elite = nullptr;
 	vector<Circle *> population = createPopulation(elite);
@@ -248,7 +254,22 @@ int main() {
 			// current elite fitness repeats for a fixed amount of generations
 			if (currentEliteFitness == (*elite).fitness) {
 				repetitions ++;
+
 				if (repetitions >= REP_TOLERANCE) {
+					// Elite repeated enough times, save dna
+					int i = 0;
+					ofstream file;
+					file.open(TEST_FOLDER "dna.txt", ofstream::ate|ofstream::app|ofstream::binary);
+					file << (unsigned char)(*elite).dna[i ++];
+					file << (unsigned char)(*elite).dna[i ++];
+					file << (unsigned char)(*elite).dna[i ++];
+					file << (unsigned char)(*elite).dna[i ++];
+					file << (unsigned char)(*elite).dna[i ++];
+					file << (unsigned char)(*elite).dna[i ++];
+					file << (unsigned char)(*elite).dna[i ++];
+					file.close();
+
+					// Save image and create new population
 					copyImage = (*elite).createImage();
 					elite = nullptr;
 					population = createPopulation(elite);
