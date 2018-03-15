@@ -1,6 +1,6 @@
 import java.util.Arrays;
 
-static final String DNA_PATH = "../../../test/dna_quiroz.txt";
+static final String DNA_PATH = "../../../test/dna_monalisa_2018.03.12_09.57.11.gi";
 static final int SCALE = 2;
 
 static final int CIRCLES_PER_STEP = 3;

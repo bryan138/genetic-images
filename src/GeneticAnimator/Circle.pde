@@ -80,7 +80,7 @@ class Circle {
     float ease(float value, float target) {
         value += ((target - value) * SPEED);
         if (abs(target - value) < 1) {
-            value =  target;
+            value = target;
         }
         return value;
     }

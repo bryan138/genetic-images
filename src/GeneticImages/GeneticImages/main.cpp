@@ -33,7 +33,7 @@ using namespace std;
 #define IMAGE_FOLDER "../../../img/"
 #define TEST_FOLDER "../../../test/"
 
-#define FILENAME "quiroz"
+#define FILENAME "monalisa"
 
 
 Mat reference, copyImage;
@@ -200,7 +200,7 @@ int main() {
 	// Create folder structure with current date
 	char buffer[50];
 	time_t rawtime = time(NULL);
-	strftime(buffer, 50, "%H.%M.%S", localtime(&rawtime));
+	strftime(buffer, 50, "%Y.%m.%e_%H.%M.%S", localtime(&rawtime));
 	string date(buffer);
 	string folder = TEST_FOLDER FILENAME "/" + date + "/";
 	_mkdir(TEST_FOLDER);
@@ -212,7 +212,7 @@ int main() {
 
 	// Create DNA file
 	ofstream file;
-	file.open(TEST_FOLDER "dna.txt");
+	file.open(TEST_FOLDER "dna_" FILENAME "_" + date + ".gi");
 	file.close();
 
 	// Create population
@@ -259,7 +259,7 @@ int main() {
 					// Elite repeated enough times, save dna
 					int i = 0;
 					ofstream file;
-					file.open(TEST_FOLDER "dna.txt", ofstream::ate|ofstream::app|ofstream::binary);
+					file.open(TEST_FOLDER "dna_" FILENAME "_" + date + ".gi", ofstream::ate|ofstream::app|ofstream::binary);
 					file << (unsigned char)(*elite).dna[i ++];
 					file << (unsigned char)(*elite).dna[i ++];
 					file << (unsigned char)(*elite).dna[i ++];
